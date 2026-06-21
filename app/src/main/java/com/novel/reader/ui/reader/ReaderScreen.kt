@@ -590,21 +590,20 @@ private fun ThemeDot(color: Color, selected: Boolean, onClick: () -> Unit) {
 }
 
 // ---------- 工具 ----------
+@Suppress("unused")
 private fun buildContent(
     paragraphs: List<String>,
     fontSize: Int,
-    lineHeight: Float,
+    @Suppress("UNUSED_PARAMETER") lineHeight: Float,
     color: Color
 ): AnnotatedString = buildAnnotatedString {
+    val style = SpanStyle(
+        color = color,
+        fontSize = fontSize.sp
+    )
     paragraphs.forEachIndexed { i, p ->
         if (i > 0) append("\n\n")
-        withStyle(
-            SpanStyle(
-                color = color,
-                fontSize = fontSize.sp,
-                lineHeight = (fontSize * lineHeight).sp
-            )
-        ) {
+        withStyle(style) {
             append(p)
         }
     }
