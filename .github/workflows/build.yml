@@ -5,7 +5,6 @@ on:
     branches: [ main, master ]
   pull_request:
     branches: [ main, master ]
-  # 支持在 Actions 页面手动触发
   workflow_dispatch:
 
 jobs:
@@ -24,11 +23,14 @@ jobs:
 
       - name: 配置 Android SDK
         uses: android-actions/setup-android@v3
-        with:
-          # 项目 compileSdk/targetSdk 需要 34
-          packages: |
-            platforms;android-34
-            build-tools;34.0.0
+
+      - name: 安装 SDK 平台与构建工具
+        run: |
+          set -e
+          yes | sdkmanager --licenses > /dev/null 2>&1 || true
+          sdkmanager "platforms;android-34" "build-tools;34.0.0" "platform-tools"
+          echo "SDK 路径: $ANDROID_HOME"
+          sdkmanager --list_installed 2>/dev/null | head -20 || true
 
       - name: 缓存 Gradle 依赖
         uses: actions/cache@v4
@@ -46,9 +48,22 @@ jobs:
         run: ./gradlew assembleDebug --no-daemon --stacktrace
 
       - name: 上传 APK 产物
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: novel-reader-debug-apk
-          path: app/build/outputs/apk/debug/*.apk
-          if-no-files-found: error
+          path: |
+            app/build/outputs/apk/debug/*.apk
+          if-no-files-found: warn
           retention-days: 30
+
+      - name: 构建失败时上传日志
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs
+          path: |
+            **/build/reports/
+            **/build/outputs/logs/
+          if-no-files-found: warn
+          retention-days: 7
