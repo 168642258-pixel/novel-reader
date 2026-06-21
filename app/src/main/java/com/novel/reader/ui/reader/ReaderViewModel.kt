@@ -39,13 +39,17 @@ class ReaderViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             try {
                 // 整本章节 JSON 解析在 IO 线程做，避免卡主线程 ANR
-                val (book, parsed) = withContext(Dispatchers.IO) {
-                    val book = repo.getById(bookId) ?: return@withContext null to emptyList<Chapter>()
-                    book to repo.chaptersFromJson(book.chaptersJson)
-                } ?: run {
+                val loaded = withContext(Dispatchers.IO) {
+                    val b = repo.getById(bookId) ?: return@withContext null
+                    val parsed = repo.chaptersFromJson(b.chaptersJson)
+                    b to parsed
+                }
+                if (loaded == null) {
                     _state.value = ReaderUiState.Error("书籍不存在")
                     return@launch
                 }
+                val book = loaded.first
+                val parsed = loaded.second
                 currentBook = book
                 chapters = parsed
                 if (chapters.isEmpty()) {
