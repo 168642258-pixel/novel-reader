@@ -11,8 +11,13 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface BookDao {
 
-    @Query("SELECT * FROM books ORDER BY lastReadTime DESC")
-    fun observeAll(): Flow<List<Book>>
+    /** 书架列表：只查元信息，不加载 chaptersJson（避免大字段导致 OOM） */
+    @Query("""
+        SELECT id, title, author, format, totalChars,
+               lastChapterIndex, lastReadTime
+        FROM books ORDER BY lastReadTime DESC
+    """)
+    fun observeSummaries(): Flow<List<BookSummary>>
 
     @Query("SELECT * FROM books WHERE id = :id")
     suspend fun getById(id: Long): Book?

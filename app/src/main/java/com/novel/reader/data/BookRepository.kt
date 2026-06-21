@@ -15,7 +15,7 @@ class BookRepository(private val context: Context) {
 
     private val dao = AppDatabase.get(context).bookDao()
 
-    fun observeAll(): Flow<List<Book>> = dao.observeAll()
+    fun observeSummaries(): Flow<List<BookSummary>> = dao.observeSummaries()
 
     suspend fun getById(id: Long): Book? = withContext(Dispatchers.IO) { dao.getById(id) }
 
@@ -46,6 +46,11 @@ class BookRepository(private val context: Context) {
         withContext(Dispatchers.IO) { dao.updateProgress(id, chapter, offset, System.currentTimeMillis()) }
 
     suspend fun delete(book: Book) = withContext(Dispatchers.IO) { dao.delete(book) }
+
+    suspend fun deleteById(id: Long) = withContext(Dispatchers.IO) {
+        // 先取出来再 delete（dao.delete 需要实体），或直接 SQL 删
+        dao.getById(id)?.let { dao.delete(it) }
+    }
 
     // -------- 章节 JSON 序列化（轻量、无第三方依赖）--------
     fun chaptersToJson(chapters: List<Chapter>): String {

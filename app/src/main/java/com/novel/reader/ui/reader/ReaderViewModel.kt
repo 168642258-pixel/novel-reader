@@ -7,10 +7,12 @@ import com.novel.reader.data.Book
 import com.novel.reader.data.BookRepository
 import com.novel.reader.data.Chapter
 import com.novel.reader.data.ReadingPrefs
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 sealed interface ReaderUiState {
     data object Loading : ReaderUiState
@@ -36,13 +38,24 @@ class ReaderViewModel(app: Application) : AndroidViewModel(app) {
     fun load(bookId: Long) {
         viewModelScope.launch {
             try {
-                val book = repo.getById(bookId) ?: run {
+                // 整本章节 JSON 解析在 IO 线程做，避免卡主线程 ANR
+                val (book, parsed) = withContext(Dispatchers.IO) {
+                    val book = repo.getById(bookId) ?: return@withContext null to emptyList<Chapter>()
+                    book to repo.chaptersFromJson(book.chaptersJson)
+                } ?: run {
                     _state.value = ReaderUiState.Error("书籍不存在")
                     return@launch
                 }
                 currentBook = book
-                chapters = repo.chaptersFromJson(book.chaptersJson)
-                _state.value = ReaderUiState.Ready(book, chapters, book.lastChapterIndex.coerceIn(0, chapters.lastIndex))
+                chapters = parsed
+                if (chapters.isEmpty()) {
+                    _state.value = ReaderUiState.Error("书籍内容为空")
+                    return@launch
+                }
+                _state.value = ReaderUiState.Ready(
+                    book, chapters,
+                    book.lastChapterIndex.coerceIn(0, chapters.lastIndex)
+                )
             } catch (e: Exception) {
                 _state.value = ReaderUiState.Error(e.message ?: "加载失败")
             }

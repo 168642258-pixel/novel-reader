@@ -27,7 +27,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.novel.reader.data.Book
+import com.novel.reader.data.BookSummary
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -37,7 +37,7 @@ fun LibraryScreen(
 ) {
     val books by viewModel.books.collectAsState()
     val importState by viewModel.importState.collectAsState()
-    var deleteTarget by remember { mutableStateOf<Book?>(null) }
+    var deleteTarget by remember { mutableStateOf<BookSummary?>(null) }
     var showSnack by remember { mutableStateOf<String?>(null) }
 
     // 文件选择器：允许 txt / epub / 任意（部分机型 mime 不全，用 */* 兜底）
@@ -130,7 +130,7 @@ fun LibraryScreen(
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun BookCard(book: Book, onClick: () -> Unit, onLongClick: () -> Unit) {
+private fun BookCard(book: BookSummary, onClick: () -> Unit, onLongClick: () -> Unit) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier.combinedClickable(
