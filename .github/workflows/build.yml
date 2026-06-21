@@ -29,8 +29,6 @@ jobs:
           set -e
           yes | sdkmanager --licenses > /dev/null 2>&1 || true
           sdkmanager "platforms;android-34" "build-tools;34.0.0" "platform-tools"
-          echo "SDK 路径: $ANDROID_HOME"
-          sdkmanager --list_installed 2>/dev/null | head -20 || true
 
       - name: 缓存 Gradle 依赖
         uses: actions/cache@v4
@@ -45,25 +43,42 @@ jobs:
         run: chmod +x gradlew
 
       - name: 构建 Debug APK
-        run: ./gradlew assembleDebug --no-daemon --stacktrace
+        run: |
+          set +e
+          ./gradlew assembleDebug --stacktrace 2>&1 | tee build-output.log
+          code=${PIPESTATUS[0]}
+          echo "BUILD_EXIT_CODE=$code" >> $GITHUB_ENV
+          exit $code
 
-      - name: 上传 APK 产物
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: novel-reader-debug-apk
-          path: |
-            app/build/outputs/apk/debug/*.apk
-          if-no-files-found: warn
-          retention-days: 30
+      - name: 提取错误到 Summary（失败时）
+        if: failure()
+        run: |
+          echo "## ❌ 构建失败，错误摘要" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 关键错误行" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          grep -E "error:|e: file|FAILURE:|What went wrong|> Task.*FAILED|Execution failed|Caused by:" build-output.log | head -80 >> $GITHUB_STEP_SUMMARY || echo "（未匹配到关键错误行）" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 最后 150 行日志" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          tail -150 build-output.log >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
 
-      - name: 构建失败时上传日志
+      - name: 上传完整构建日志（失败时）
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: build-logs
-          path: |
-            **/build/reports/
-            **/build/outputs/logs/
+          name: build-output-log
+          path: build-output.log
           if-no-files-found: warn
           retention-days: 7
+
+      - name: 上传 APK 产物（成功时）
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: novel-reader-debug-apk
+          path: app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+          retention-days: 30
