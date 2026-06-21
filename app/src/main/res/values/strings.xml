@@ -1,0 +1,24 @@
+<resources>
+    <string name="app_name">轻阅</string>
+    <string name="library_title">书架</string>
+    <string name="reader_title">阅读</string>
+    <string name="import_book">导入书籍</string>
+    <string name="empty_library">书架空空如也\n点击右上角导入小说吧</string>
+    <string name="mode_horizontal">左右翻页</string>
+    <string name="mode_vertical">上下翻页</string>
+    <string name="mode_scroll">连续滚动</string>
+    <string name="theme_light">浅色</string>
+    <string name="theme_dark">深色</string>
+    <string name="font_size">字号</string>
+    <string name="brightness">亮度</string>
+    <string name="chapter">章节</string>
+    <string name="delete">删除</string>
+    <string name="confirm_delete">确认删除这本书吗？</string>
+    <string name="cancel">取消</string>
+    <string name="loading">正在加载…</string>
+    <string name="importing">正在导入…</string>
+    <string name="import_failed">导入失败，请检查文件格式</string>
+    <string name="back">返回</string>
+    <string name="previous_chapter">上一章</string>
+    <string name="next_chapter">下一章</string>
+</resources>
